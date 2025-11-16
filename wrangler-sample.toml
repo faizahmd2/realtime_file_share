@@ -1,0 +1,28 @@
+name = "file-share"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "file_share"
+database_id = "database-id"
+
+# R2 Bucket (your existing R2 bucket)
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "realtime-file-sharing"
+
+# Environment variables
+[vars]
+MAX_FILE_SIZE = "104857600" # 100MB in bytes
+DAILY_UPLOAD_LIMIT = "2147483648" # 2GB in bytes
+MAX_FILES_PER_ID = "50"
+MIN_EXPIRY_MINUTES = "5"
+MAX_EXPIRY_MINUTES = "10080" # 7 days
+
+[triggers]
+crons = ["0 * * * *"]  # Runs every hour
+
+# Secrets (set with: wrangler secret put SECRET_NAME)
+# R2_PUBLIC_URL = "your-r2-public-domain" (optional)
