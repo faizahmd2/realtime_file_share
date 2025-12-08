@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Share</title>
     <style>
         * {
@@ -12,385 +13,470 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Segoe UI", Roboto, sans-serif;
+            background: #f5f2eb;
+            color: #2f2a25;
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1400px;
+        .page {
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 1rem;
-            height: 100vh;
+            padding: 0 1.5em;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
         }
 
-        .header {
+        .top-bar {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 1rem 0;
-            margin-bottom: 1rem;
+            justify-content: space-between;
+            border-bottom: 1px solid #e0d8cc;
+            gap: 8px;
+            padding: 0.5em 0;
         }
 
-        .title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #f093fb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .upload-btn {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: #82776a;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            border: 1px solid #e0d8cc;
+            background: #fffaf3;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #594f43;
+        }
+
+        .pill-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #10b981;
+        }
+
+        .btn-primary {
             border: none;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #f4a259, #f08b4b);
+            color: #fff;
             cursor: pointer;
-            font-size: 2rem;
-            color: white;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
-            z-index: 100;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .upload-btn:hover {
-            transform: scale(1.1) rotate(90deg);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        .content {
+            flex: 1;
+            padding: 10px 2px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-size: 11px;
+            color: #7b6f61;
+            padding: 0 2px 4px;
+        }
+
+        .info-row code {
+            background: #fffaf3;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 11px;
+            border: 1px solid #e0d8cc;
         }
 
         .files-grid {
             flex: 1;
             overflow-y: auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-            padding-bottom: 5rem;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            padding: 4px 0 10px;
         }
 
         .file-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid #475569;
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            background: #fffdf8;
+            border-radius: 10px;
+            border: 1px solid #e2d9cd;
+            padding: 10px 10px 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 7em;
         }
 
-        .file-card:hover {
-            transform: translateY(-4px);
-            border-color: #667eea;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        .file-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
 
         .file-icon {
-            font-size: 3rem;
-            margin-bottom: 0.75rem;
-            text-align: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: #f6eee4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .file-main {
+            flex: 1;
+            min-width: 0;
         }
 
         .file-name {
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 0.5rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 2px;
         }
 
         .file-meta {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-bottom: 0.75rem;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #8a7e70;
+        }
+
+        .meta-pill {
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: #f7efe4;
         }
 
         .file-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 6px;
+            margin-top: 4px;
         }
 
         .action-btn {
             flex: 1;
-            padding: 0.5rem;
-            border: none;
-            border-radius: 0.5rem;
+            padding: 5px 0;
+            border-radius: 999px;
+            border: 1px solid #e0d8cc;
+            background: #fffaf3;
+            font-size: 11px;
             cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
 
-        .download-btn {
-            background: rgba(74, 222, 128, 0.2);
-            color: #4ade80;
+        .action-btn.download {
+            border-color: #cddfcc;
+            background: #f4fbf4;
+            color: #25634a;
         }
 
-        .download-btn:hover {
-            background: #4ade80;
-            color: white;
+        .action-btn.delete {
+            border-color: #f2d3ce;
+            background: #fff5f3;
+            color: #9f3a2b;
         }
 
-        .delete-btn {
-            background: rgba(248, 113, 113, 0.2);
-            color: #f87171;
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 10px;
+            color: #8a7e70;
+            font-size: 13px;
         }
 
-        .delete-btn:hover {
-            background: #f87171;
-            color: white;
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 10px;
+            font-size: 13px;
+            color: #8a7e70;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #e2d9cd;
+            border-top-color: #f1974f;
+            margin: 0 auto 8px;
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .alert {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #fff;
+            border: 1px solid #e2d9cd;
+            color: #43362a;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .alert.success {
+            border-color: #c5e7c7;
+        }
+
+        .alert.error {
+            border-color: #f3c4c0;
+            color: #8a3124;
         }
 
         .modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
+            inset: 0;
+            background: rgba(15, 10, 5, 0.35);
+            display: none;
             align-items: center;
             justify-content: center;
+            z-index: 40;
         }
 
         .modal.show {
             display: flex;
         }
 
-        .modal-content {
-            background: #1e293b;
-            border-radius: 1rem;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid #475569;
+        .modal-panel {
+            width: 100%;
+            max-width: 420px;
+            background: #fffdf8;
+            border-radius: 16px;
+            border: 1px solid #e2d9cd;
+            padding: 16px 16px 14px;
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.12);
         }
 
         .modal-title {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
+            font-size: 15px;
             font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modal-sub {
+            font-size: 11px;
+            color: #8a7e70;
+            margin-bottom: 12px;
         }
 
         .upload-area {
-            border: 2px dashed #475569;
-            border-radius: 0.75rem;
-            padding: 3rem 2rem;
+            border-radius: 12px;
+            border: 1px dashed #d3c7b7;
+            background: #fffbf4;
+            padding: 22px 12px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 1rem;
-        }
-
-        .upload-area:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            margin-bottom: 10px;
         }
 
         .upload-area.dragging {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.2);
+            border-color: #f1974f;
+            background: #fff5e6;
         }
 
         .file-input {
             display: none;
         }
 
-        .input-group {
-            margin-bottom: 1rem;
+        .field {
+            margin-bottom: 10px;
         }
 
-        .input-label {
+        .field label {
             display: block;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-            color: #94a3b8;
+            font-size: 11px;
+            color: #7b6f61;
+            margin-bottom: 4px;
         }
 
-        .input {
+        .field input {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #475569;
-            border-radius: 0.5rem;
-            background: #0f172a;
-            color: #f8fafc;
-            font-size: 0.875rem;
-        }
-
-        .input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border: 1px solid #e0d8cc;
+            padding: 7px 8px;
+            font-size: 12px;
+            background: #fffaf3;
+            color: #2f2a25;
         }
 
         .modal-actions {
             display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            gap: 8px;
+            margin-top: 10px;
         }
 
         .btn-secondary {
-            background: #334155;
-            color: #f8fafc;
+            flex: 1;
+            border-radius: 999px;
+            border: 1px solid #e0d8cc;
+            background: #fffaf3;
+            font-size: 12px;
+            padding: 7px 0;
+            cursor: pointer;
         }
 
-        .btn-secondary:hover {
-            background: #475569;
+        .btn-main {
+            flex: 1;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, #f4a259, #f08b4b);
+            color: #fff;
+            font-size: 12px;
+            padding: 7px 0;
+            cursor: pointer;
         }
 
-        .btn:disabled {
+        .btn-main:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
         .progress-bar {
-            height: 4px;
-            background: #334155;
-            border-radius: 2px;
+            height: 3px;
+            border-radius: 999px;
+            background: #efe4d4;
             overflow: hidden;
-            margin-top: 1rem;
+            margin-top: 6px;
             display: none;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #f093fb);
             width: 0%;
+            background: linear-gradient(90deg, #f1974f, #f7c574);
             transition: width 0.3s ease;
         }
 
-        .alert {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            z-index: 2000;
-            animation: slideIn 0.3s ease;
-        }
-
-        .alert.success {
-            background: rgba(74, 222, 128, 0.2);
-            border: 1px solid #4ade80;
-            color: #4ade80;
-        }
-
-        .alert.error {
-            background: rgba(248, 113, 113, 0.2);
-            border: 1px solid #f87171;
-            color: #f87171;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+        @media (max-width: 640px) {
+            .page {
+                padding: 10px;
             }
-            to {
-                transform: translateX(0);
-                opacity: 1;
+
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
             }
-        }
 
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #94a3b8;
-        }
-
-        .empty-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid #334155;
-            border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
             .files-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .brand {
+                display: none;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="title">📁 File Share</h1>
-        </div>
-
-        <div class="files-grid" id="filesGrid">
-            <div class="loading">
-                <div class="spinner"></div>
-                <div style="margin-top: 1rem;">Loading files...</div>
+    <div class="page">
+        <header class="top-bar">
+            <div class="brand">
+                <div class="brand-mark">📁</div>
             </div>
-        </div>
+            <div class="top-right">
+                <div class="pill">
+                    <span class="pill-dot" id="roomStatusDot"></span>
+                    <span id="roomTypeLabel">Public room</span>
+                </div>
+                <span class="pill" id="roomConsumptionId">0MB</span>
+                <button class="btn-primary" id="uploadBtn">
+                    <span>Upload</span>
+                </button>
+            </div>
+        </header>
 
-        <button class="upload-btn" id="uploadBtn" title="Upload File">+</button>
+        <main class="content">
+            <div class="files-grid" id="filesGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>Loading files…</div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Upload Modal -->
+    <!-- Upload modal -->
     <div class="modal" id="uploadModal">
-        <div class="modal-content">
-            <h2 class="modal-title">Upload File</h2>
-            
+        <div class="modal-panel">
+            <div class="modal-title">Upload file</div>
+            <div class="modal-sub">Max 100MB per file. Files auto-expire after the time you choose.</div>
+
             <div class="upload-area" id="uploadArea">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">☁️</div>
-                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">Drop file here or click to browse</div>
-                <div style="font-size: 0.875rem; color: #94a3b8;">Max 100MB per file</div>
+                <div style="font-size: 28px; margin-bottom: 6px;">☁️</div>
+                <div style="font-size: 13px; margin-bottom: 2px;">Drop file here or click to browse</div>
+                <div style="font-size: 11px; color: #8a7e70;">Supported types: images, docs, zips, media…</div>
             </div>
+            <input type="file" id="fileInput" class="file-input" />
 
-            <input type="file" id="fileInput" class="file-input">
-
-            <div class="input-group">
-                <label class="input-label">Expiry Time (minutes)</label>
-                <input type="number" id="expiryInput" class="input" value="60" min="5" max="10080">
+            <div class="field">
+                <label for="expiryInput">Expiry (minutes)</label>
+                <input type="number" id="expiryInput" value="60" min="5" max="10080" />
             </div>
 
             <div class="progress-bar" id="progressBar">
@@ -398,15 +484,15 @@
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
-                <button class="btn btn-primary" id="submitBtn" disabled>Upload</button>
+                <button class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn-main" id="submitBtn" disabled>Upload</button>
             </div>
         </div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const uniqueId = urlParams.get('uniqueId');
+        const id = urlParams.get('id');
 
         const elements = {
             filesGrid: document.getElementById('filesGrid'),
@@ -418,57 +504,34 @@
             submitBtn: document.getElementById('submitBtn'),
             cancelBtn: document.getElementById('cancelBtn'),
             progressBar: document.getElementById('progressBar'),
-            progressFill: document.getElementById('progressFill')
+            progressFill: document.getElementById('progressFill'),
+            roomStatusDot: document.getElementById('roomStatusDot'),
+            roomTypeLabel: document.getElementById('roomTypeLabel'),
+            roomConsumptionId: document.getElementById('roomConsumptionId')
         };
 
         let selectedFile = null;
 
-        // Load files
-        async function loadFiles() {
-            try {
-                const response = await fetch(`/api/files?uniqueId=${uniqueId}`);
-                const data = await response.json();
+        function initRoomUI() {
+            const isPersonal = id && id.startsWith('_');
+            elements.roomTypeLabel.textContent = isPersonal ? 'Private room' : 'Public room';
+            elements.roomStatusDot.style.background = isPersonal ? '#2563eb' : '#10b981';
 
-                if (data.files.length === 0) {
-                    elements.filesGrid.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1/-1;">
-                            <div class="empty-icon">📄</div>
-                            <div>No files uploaded yet</div>
-                            <div style="font-size: 0.875rem; margin-top: 0.5rem;">Click the + button to upload</div>
-                        </div>
-                    `;
-                } else {
-                    elements.filesGrid.innerHTML = data.files.map(file => {
-                        const icon = getFileIcon(file.original_name);
-                        const size = formatFileSize(file.size);
-                        const timeLeft = formatTimeRemaining(file.expire_at);
-                        
-                        return `
-                            <div class="file-card">
-                                <div class="file-icon">${icon}</div>
-                                <div class="file-name" title="${file.original_name}">${file.original_name}</div>
-                                <div class="file-meta">
-                                    <span>📦 ${size}</span>
-                                    <span>⏰ ${timeLeft}</span>
-                                </div>
-                                <div class="file-actions">
-                                    <button class="action-btn download-btn" onclick="downloadFile('${file.file_key}', '${file.original_name}')">
-                                        ⬇️ Download
-                                    </button>
-                                    <button class="action-btn delete-btn" onclick="deleteFile('${file.file_key}')">
-                                        🗑️ Delete
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-            } catch (error) {
-                showAlert('Failed to load files', 'error');
+            // If private and not logged in, show small hint (optional)
+            if (isPersonal) {
+                // call auth status to allow UI decisions
+                fetch('/auth/status', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(j => {
+                        if (!j.loggedIn) {
+                            showAlert('This is a private room. Please login to upload.', 'error');
+                        }
+                    })
+                    .catch(() => { });
             }
         }
 
-        // Upload functions
+        initRoomUI();
         elements.uploadBtn.addEventListener('click', () => {
             elements.uploadModal.classList.add('show');
         });
@@ -478,87 +541,98 @@
             resetUpload();
         });
 
+        // fileInput -> select
         elements.uploadArea.addEventListener('click', () => {
             elements.fileInput.click();
         });
 
+        elements.fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                setSelectedFile(e.target.files[0]);
+            }
+        });
+
+        // drag & drop
         elements.uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             elements.uploadArea.classList.add('dragging');
         });
 
-        elements.uploadArea.addEventListener('dragleave', () => {
+        elements.uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
             elements.uploadArea.classList.remove('dragging');
         });
 
         elements.uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             elements.uploadArea.classList.remove('dragging');
-            if (e.dataTransfer.files.length > 0) {
-                handleFileSelect(e.dataTransfer.files[0]);
-            }
+            const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) setSelectedFile(f);
         });
 
-        elements.fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-
-        function handleFileSelect(file) {
-            if (file.size > 100 * 1024 * 1024) {
-                showAlert('File exceeds 100MB limit', 'error');
-                return;
-            }
+        function setSelectedFile(file) {
             selectedFile = file;
             elements.submitBtn.disabled = false;
-            elements.uploadArea.innerHTML = `
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">${getFileIcon(file.name)}</div>
-                <div style="font-weight: 600;">${file.name}</div>
-                <div style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">${formatFileSize(file.size)}</div>
-            `;
+            showAlert(`Selected: ${file.name}`, 'success');
         }
 
+        // Reset upload state
+        function resetUpload() {
+            selectedFile = null;
+            elements.fileInput.value = '';
+            elements.submitBtn.disabled = true;
+            elements.progressBar.style.display = 'none';
+            elements.progressFill.style.width = '0%';
+        }
+
+        // ---------- Upload flow ----------
         elements.submitBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
             try {
                 elements.submitBtn.disabled = true;
                 elements.progressBar.style.display = 'block';
+                elements.progressFill.style.width = '4%';
 
-                // Step 1: Initialize upload
+                // Step 1: Init upload (include credentials so cookie is sent if private)
                 const initResponse = await fetch('/api/init-upload', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        uniqueId,
+                        id,
                         fileName: selectedFile.name,
                         fileSize: selectedFile.size,
-                        expiryMinutes: parseInt(elements.expiryInput.value),
+                        expiryMinutes: parseInt(elements.expiryInput.value, 10),
                         clientFingerprint: generateFingerprint()
                     })
                 });
 
-                if (!initResponse.ok) throw new Error('Upload initialization failed');
+                if (!initResponse.ok) {
+                    const err = await initResponse.json().catch(() => ({ error: 'Init failed' }));
+                    throw new Error(err.error || 'Upload initialization failed');
+                }
                 const initData = await initResponse.json();
 
-                // Step 2: Upload file to R2
-                const formData = new FormData();
-                formData.append('file', selectedFile);
-
+                // Step 2: Upload file (PUT to Worker/R2) — send session token header and include credentials
                 const uploadResponse = await fetch(`/api/r2-upload/${initData.fileKey}`, {
                     method: 'PUT',
+                    credentials: 'include',
                     headers: { 'X-Session-Token': initData.sessionToken },
                     body: selectedFile
                 });
 
-                if (!uploadResponse.ok) throw new Error('File upload failed');
+                if (!uploadResponse.ok) {
+                    const err = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+                    throw new Error(err.error || 'File upload failed');
+                }
 
-                elements.progressFill.style.width = '100%';
+                elements.progressFill.style.width = '80%';
 
                 // Step 3: Complete upload
                 const completeResponse = await fetch('/api/upload-complete', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-Session-Token': initData.sessionToken
@@ -566,35 +640,80 @@
                     body: JSON.stringify({ sessionId: initData.sessionId })
                 });
 
-                if (!completeResponse.ok) throw new Error('Upload completion failed');
+                if (!completeResponse.ok) {
+                    const err = await completeResponse.json().catch(() => ({ error: 'Complete failed' }));
+                    throw new Error(err.error || 'Upload completion failed');
+                }
 
+                elements.progressFill.style.width = '100%';
                 showAlert('File uploaded successfully!', 'success');
                 elements.uploadModal.classList.remove('show');
                 resetUpload();
                 loadFiles();
-
             } catch (error) {
                 showAlert(error.message || 'Upload failed', 'error');
                 elements.submitBtn.disabled = false;
+                elements.progressBar.style.display = 'none';
+                elements.progressFill.style.width = '0%';
             }
         });
 
-        function resetUpload() {
-            selectedFile = null;
-            elements.fileInput.value = '';
-            elements.submitBtn.disabled = true;
-            elements.progressBar.style.display = 'none';
-            elements.progressFill.style.width = '0%';
-            elements.uploadArea.innerHTML = `
-                <div style="font-size: 3rem; margin-bottom: 1rem;">☁️</div>
-                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">Drop file here or click to browse</div>
-                <div style="font-size: 0.875rem; color: #94a3b8;">Max 100MB per file</div>
-            `;
+        // ---------- Listing / delete / download ----------
+        async function loadFiles() {
+            try {
+                const res = await fetch(`/api/files?id=${encodeURIComponent(id)}`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.quota) {
+                    elements.roomConsumptionId.textContent = `${(data.quota.used / (1024 * 1024)).toFixed(1)}MB / ${(data.quota.limit / (1024 * 1024)).toFixed(1)}MB today`;
+                } else {
+                    elements.roomConsumptionId.textContent = '';
+                }
+
+                if (!data.files || data.files.length === 0) {
+                    elements.filesGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <div>No files yet</div>
+          <div style="font-size:11px;margin-top:4px;">Use the Upload button to add files to this room.</div>
+        </div>`;
+                    return;
+                }
+
+                elements.filesGrid.innerHTML = data.files.map(file => {
+                    const size = formatFileSize(file.size);
+                    const timeLeft = formatTimeRemaining(file.expire_at);
+                    const icon = getFileIcon(file.original_name);
+                    return `
+        <div class="file-card">
+          <div class="file-top">
+            <div class="file-icon">${icon}</div>
+            <div class="file-main">
+              <div class="file-name" title="${file.original_name}">${file.original_name}</div>
+              <div class="file-meta">
+                <span class="meta-pill">${size}</span>
+                <span>${timeLeft}</span>
+              </div>
+            </div>
+          </div>
+          <div class="file-actions">
+            <button class="action-btn download" onclick="downloadFile('${file.file_key}', '${file.original_name}')">
+              ⬇️ Download
+            </button>
+            <button class="action-btn delete" onclick="deleteFile('${file.file_key}')">
+              🗑 Delete
+            </button>
+          </div>
+        </div>`;
+                }).join('');
+            } catch (e) {
+                showAlert('Failed to load files', 'error');
+            }
         }
 
-        // File operations
         async function downloadFile(fileKey, fileName) {
-            window.location.href = `/api/download/${uniqueId}/${encodeURIComponent(fileKey)}`;
+            // Use location.href so browser handles download properly
+            window.location.href = `/api/download/${id}/${encodeURIComponent(fileKey)}`;
             showAlert('Downloading...', 'success');
         }
 
@@ -602,11 +721,15 @@
             if (!confirm('Delete this file?')) return;
 
             try {
-                const response = await fetch(`/api/files/${uniqueId}/${encodeURIComponent(fileKey)}`, {
-                    method: 'DELETE'
+                const response = await fetch(`/api/files/${id}/${encodeURIComponent(fileKey)}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
                 });
 
-                if (!response.ok) throw new Error('Delete failed');
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ error: 'Delete failed' }));
+                    throw new Error(err.error || 'Delete failed');
+                }
 
                 showAlert('File deleted', 'success');
                 loadFiles();
@@ -615,7 +738,7 @@
             }
         }
 
-        // Utilities
+        // ---------- utilities (unchanged) ----------
         function getFileIcon(fileName) {
             const ext = fileName.split('.').pop()?.toLowerCase() || '';
             const icons = {
@@ -662,12 +785,14 @@
             setTimeout(() => alert.remove(), 3000);
         }
 
-        // Make functions global
+        // Expose for HTML buttons
         window.downloadFile = downloadFile;
         window.deleteFile = deleteFile;
 
-        // Load files on start
+        // initial load
         loadFiles();
     </script>
+
 </body>
+
 </html>

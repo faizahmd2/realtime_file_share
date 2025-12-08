@@ -1,15 +1,27 @@
-import { generateShortId, generateSecureToken, generateFileKey, validateFileName } from './utils';
+import { 
+  generateShortId, 
+  createToken, 
+  verifyToken, 
+  getCookie, 
+  hashPassword, 
+  verifyPassword,
+  generateSecureToken,
+  generateFileKey,
+  validateFileName
+} from './utils';
 import dashboardHTML from './dashboard.html';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
+    env.IS_DEV = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
     };
 
     if (request.method === 'OPTIONS') {
@@ -17,19 +29,132 @@ export default {
     }
 
     try {
-      // Root and dashboard
       if (path === '/' || path === '/dashboard') {
-        const uniqueId = url.searchParams.get('uniqueId');
-        if (!uniqueId) {
+        let id = url.searchParams.get('id');
+
+        if (!id) {
           const newId = generateShortId();
-          return Response.redirect(`${url.origin}/dashboard?uniqueId=${newId}`, 302);
+          return Response.redirect(`${url.origin}/dashboard?id=${newId}`, 302);
         }
+
+        // Private link if id starts with "_"
+        if (id.startsWith('_')) {
+          const payload = await requireAuthCookie(request, env);
+          if (!payload) {
+            return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+          }
+        }
+
         return new Response(dashboardHTML, {
-          headers: { 'Content-Type': 'text/html', ...corsHeaders }
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            ...corsHeaders
+          }
         });
       }
 
-      // Health check
+      // -------- Auth endpoints (shared with editor) --------
+
+      if (path === '/auth/verify' && request.method === 'POST') {
+        const { username, password } = await request.json();
+
+        if (!username || !password) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Username and password required'
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+
+        const user = await verifyCredentials(env.DB, username, password);
+
+        if (user) {
+          const token = await createToken(env.AUTH_SECRET, username, 7);
+
+          const headers = new Headers({
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            ...corsHeaders
+          });
+
+          const maxAge = 7 * 24 * 60 * 60;
+          let cookie = `auth=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; SameSite=Lax`;
+          if (!env.IS_DEV) {
+            cookie += '; Secure';
+          }
+          headers.append('Set-Cookie', cookie);
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } else {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid credentials'
+          }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+      }
+
+      if (path === '/auth/status' && request.method === 'GET') {
+        const token = getCookie(request, 'auth');
+        const payload = token ? await verifyToken(env.AUTH_SECRET, token) : null;
+
+        if (!payload) {
+          return new Response(JSON.stringify({ loggedIn: false }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+
+        return new Response(JSON.stringify({
+          loggedIn: true,
+          username: payload.u
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      }
+
+      // Admin helper: create/update user
+      if (path === '/admin/users/create' && request.method === 'POST') {
+        const adminKey = request.headers.get('X-Admin-Key');
+        if (adminKey !== env.ADMIN_KEY) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+
+        const { username, password } = await request.json();
+        if (!username || !password) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Username and password required'
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        await env.DB.prepare(
+          `INSERT INTO users (username, password_hash, created_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(username) DO UPDATE SET 
+             password_hash = excluded.password_hash`
+        ).bind(username, passwordHash, Date.now()).run();
+
+        return new Response(JSON.stringify({ success: true, username }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      }
+
+      // -------- Health check --------
+
       if (path === '/health') {
         return new Response(JSON.stringify({
           status: 'healthy',
@@ -44,22 +169,25 @@ export default {
         });
       }
 
-      // Initialize upload session
+      // -------- File API (D1 + R2) --------
+
+      // Init upload
       if (path === '/api/init-upload' && request.method === 'POST') {
         return await handleInitUpload(request, env, corsHeaders);
       }
 
-      // Get upload credentials
+      // Upload credentials (not used in your simple PUT path,
+      // but kept for compatibility / future)
       if (path === '/api/upload-credentials' && request.method === 'POST') {
         return await handleUploadCredentials(request, env, corsHeaders);
       }
 
-      // Complete upload
+      // Complete upload (store metadata, mark session complete)
       if (path === '/api/upload-complete' && request.method === 'POST') {
         return await handleUploadComplete(request, env, corsHeaders);
       }
 
-      // List files
+      // List files for a id
       if (path === '/api/files' && request.method === 'GET') {
         return await handleListFiles(request, env, corsHeaders);
       }
@@ -74,12 +202,12 @@ export default {
         return await handleDeleteFile(request, env, corsHeaders);
       }
 
-      // Get stats
+      // Get quota / stats
       if (path.startsWith('/api/stats/') && request.method === 'GET') {
         return await handleGetStats(request, env, corsHeaders);
       }
 
-      // Direct R2 upload
+      // Direct PUT to R2 via Worker
       if (path.startsWith('/api/r2-upload/') && request.method === 'PUT') {
         return await handleR2Upload(request, env, corsHeaders);
       }
@@ -101,22 +229,62 @@ export default {
   }
 };
 
-// Handler functions
+// ------------- Auth helpers -------------
+
+async function requireAuthCookie(request, env) {
+  const token = getCookie(request, 'auth');
+  if (!token) return null;
+  const payload = await verifyToken(env.AUTH_SECRET, token);
+  return payload || null;
+}
+
+async function verifyCredentials(db, username, password) {
+  try {
+    const result = await db.prepare(
+      'SELECT username, password_hash FROM users WHERE username = ?'
+    ).bind(username).first();
+
+    if (!result) return null;
+
+    const isValid = await verifyPassword(password, result.password_hash);
+    if (isValid) {
+      return { username: result.username };
+    }
+    return null;
+  } catch (error) {
+    console.error('Auth error:', error);
+    return null;
+  }
+}
+
+// ------------- File handlers -------------
+
 async function handleInitUpload(request, env, corsHeaders) {
   const body = await request.json();
-  const { uniqueId, fileName, fileSize, expiryMinutes, clientFingerprint } = body;
+  const { id, fileName, fileSize, expiryMinutes, clientFingerprint } = body;
 
-  if (!uniqueId || !fileName || !fileSize || !expiryMinutes || !clientFingerprint) {
+  if (!id || !fileName || !fileSize || !expiryMinutes || !clientFingerprint) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 
+  // Private rooms: require auth if id starts with "_"
+  if (id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
+
   const maxFileSize = parseInt(env.MAX_FILE_SIZE);
   if (fileSize > maxFileSize) {
-    return new Response(JSON.stringify({ 
-      error: `File size exceeds maximum of ${Math.round(maxFileSize / 1024 / 1024)}MB` 
+    return new Response(JSON.stringify({
+      error: `File size exceeds maximum of ${Math.round(maxFileSize / 1024 / 1024)}MB`
     }), {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -130,10 +298,10 @@ async function handleInitUpload(request, env, corsHeaders) {
     });
   }
 
-  // Check daily limits
-  const limitCheck = await checkDailyUploadLimit(env.DB, uniqueId, fileSize, env);
+  // Daily quota check
+  const limitCheck = await checkDailyUploadLimit(env.DB, id, fileSize, env);
   if (!limitCheck.allowed) {
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: 'Daily upload limit exceeded',
       quota: limitCheck
     }), {
@@ -142,10 +310,10 @@ async function handleInitUpload(request, env, corsHeaders) {
     });
   }
 
-  // Create session
+  // Create upload session
   const sessionToken = generateSecureToken();
   const sessionId = crypto.randomUUID();
-  const fileKey = generateFileKey(uniqueId, fileName, sessionId);
+  const fileKey = generateFileKey(id, fileName, sessionId);
   const now = Date.now();
 
   await env.DB.prepare(`
@@ -154,7 +322,7 @@ async function handleInitUpload(request, env, corsHeaders) {
      expiry_minutes, client_fingerprint, status, created_at, expires_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
   `).bind(
-    sessionId, sessionToken, uniqueId, fileKey, fileName, fileSize,
+    sessionId, sessionToken, id, fileKey, fileName, fileSize,
     expiryMinutes, clientFingerprint, now, now + 3600000
   ).run();
 
@@ -188,33 +356,26 @@ async function handleUploadCredentials(request, env, corsHeaders) {
     });
   }
 
-  if (session.upload_started) {
-    return new Response(JSON.stringify({ error: 'Upload already started' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    });
+  // Extra safety: require auth for private IDs
+  if (session.unique_id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
   }
 
+  const url = new URL(request.url);
   const body = await request.json();
   const contentType = body.contentType || 'application/octet-stream';
 
-  // Generate R2 presigned URL
-  const uploadUrl = await env.R2_BUCKET.createMultipartUpload(session.file_key, {
-    httpMetadata: { contentType }
-  });
-
-  // Mark session as started
-  await env.DB.prepare(
-    'UPDATE upload_sessions SET upload_started = 1 WHERE session_id = ?'
-  ).bind(session.session_id).run();
-
-  // For simple uploads, generate a PUT URL
-  const expirationTime = Math.floor(Date.now() / 1000) + 1800; // 30 minutes
-  
+  // Using worker proxy instead of presigned URL
   return new Response(JSON.stringify({
     uploadUrl: `${url.origin}/api/r2-upload/${session.file_key}`,
     fileKey: session.file_key,
-    sessionToken: sessionToken
+    sessionToken
   }), {
     headers: { 'Content-Type': 'application/json', ...corsHeaders }
   });
@@ -240,17 +401,20 @@ async function handleUploadComplete(request, env, corsHeaders) {
     });
   }
 
-//   if (!session.upload_started) {
-//     return new Response(JSON.stringify({ error: 'Upload not started' }), {
-//       status: 400,
-//       headers: { 'Content-Type': 'application/json', ...corsHeaders }
-//     });
-//   }
+  // Private -> auth
+  if (session.unique_id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
 
   const now = Date.now();
   const expireAt = now + (session.expiry_minutes * 60 * 1000);
 
-  // Store file metadata
   await env.DB.prepare(`
     INSERT INTO files 
     (id, unique_id, file_key, original_name, size, content_type, 
@@ -269,14 +433,13 @@ async function handleUploadComplete(request, env, corsHeaders) {
     session.session_id
   ).run();
 
-  // Mark session as completed
   await env.DB.prepare(
     'UPDATE upload_sessions SET upload_completed = 1, status = "completed", completed_at = ? WHERE session_id = ?'
   ).bind(now, session.session_id).run();
 
-  return new Response(JSON.stringify({ 
-    success: true, 
-    message: 'Upload confirmed' 
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'Upload confirmed'
   }), {
     headers: { 'Content-Type': 'application/json', ...corsHeaders }
   });
@@ -284,21 +447,31 @@ async function handleUploadComplete(request, env, corsHeaders) {
 
 async function handleListFiles(request, env, corsHeaders) {
   const url = new URL(request.url);
-  const uniqueId = url.searchParams.get('uniqueId');
+  const id = url.searchParams.get('id');
 
-  if (!uniqueId) {
-    return new Response(JSON.stringify({ error: 'uniqueId required' }), {
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'id required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 
+  if (id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
+
   const now = Date.now();
   const files = await env.DB.prepare(
     'SELECT id, unique_id, file_key, original_name, size, expire_at, uploaded_at FROM files WHERE unique_id = ? AND expire_at > ? AND status = "completed" ORDER BY uploaded_at DESC'
-  ).bind(uniqueId, now).all();
+  ).bind(id, now).all();
 
-  const limitCheck = await checkDailyUploadLimit(env.DB, uniqueId, 0, env);
+  const limitCheck = await checkDailyUploadLimit(env.DB, id, 0, env);
 
   return new Response(JSON.stringify({
     files: files.results || [],
@@ -312,12 +485,22 @@ async function handleListFiles(request, env, corsHeaders) {
 async function handleDownload(request, env, corsHeaders) {
   const url = new URL(request.url);
   const parts = url.pathname.split('/');
-  const uniqueId = parts[3];
+  const id = parts[3];
   const fileKey = decodeURIComponent(parts[4]);
+
+  if (id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
 
   const file = await env.DB.prepare(
     'SELECT * FROM files WHERE unique_id = ? AND file_key = ? AND expire_at > ? AND status = "completed"'
-  ).bind(uniqueId, fileKey, Date.now()).first();
+  ).bind(id, fileKey, Date.now()).first();
 
   if (!file) {
     return new Response(JSON.stringify({ error: 'File not found or expired' }), {
@@ -326,9 +509,7 @@ async function handleDownload(request, env, corsHeaders) {
     });
   }
 
-  // Get file from R2
   const object = await env.R2_BUCKET.get(file.file_key);
-  
   if (!object) {
     return new Response(JSON.stringify({ error: 'File not found in storage' }), {
       status: 404,
@@ -336,7 +517,6 @@ async function handleDownload(request, env, corsHeaders) {
     });
   }
 
-  // Return file directly
   return new Response(object.body, {
     headers: {
       'Content-Type': file.content_type || 'application/octet-stream',
@@ -349,12 +529,22 @@ async function handleDownload(request, env, corsHeaders) {
 async function handleDeleteFile(request, env, corsHeaders) {
   const url = new URL(request.url);
   const parts = url.pathname.split('/');
-  const uniqueId = parts[3];
+  const id = parts[3];
   const fileKey = decodeURIComponent(parts[4]);
+
+  if (id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
 
   const file = await env.DB.prepare(
     'SELECT * FROM files WHERE unique_id = ? AND file_key = ?'
-  ).bind(uniqueId, fileKey).first();
+  ).bind(id, fileKey).first();
 
   if (!file) {
     return new Response(JSON.stringify({ error: 'File not found' }), {
@@ -363,17 +553,14 @@ async function handleDeleteFile(request, env, corsHeaders) {
     });
   }
 
-  // Delete from R2
   await env.R2_BUCKET.delete(file.file_key);
-
-  // Delete from database
   await env.DB.prepare(
     'DELETE FROM files WHERE unique_id = ? AND file_key = ?'
-  ).bind(uniqueId, fileKey).run();
+  ).bind(id, fileKey).run();
 
-  return new Response(JSON.stringify({ 
-    success: true, 
-    message: 'File deleted' 
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'File deleted'
   }), {
     headers: { 'Content-Type': 'application/json', ...corsHeaders }
   });
@@ -381,9 +568,19 @@ async function handleDeleteFile(request, env, corsHeaders) {
 
 async function handleGetStats(request, env, corsHeaders) {
   const url = new URL(request.url);
-  const uniqueId = url.pathname.split('/api/stats/')[1];
+  const id = url.pathname.split('/api/stats/')[1];
 
-  const limitCheck = await checkDailyUploadLimit(env.DB, uniqueId, 0, env);
+  if (id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
+
+  const limitCheck = await checkDailyUploadLimit(env.DB, id, 0, env);
 
   return new Response(JSON.stringify({
     quota: limitCheck,
@@ -401,7 +598,7 @@ async function handleR2Upload(request, env, corsHeaders) {
   const url = new URL(request.url);
   const fileKey = decodeURIComponent(url.pathname.split('/api/r2-upload/')[1]);
   const sessionToken = request.headers.get('X-Session-Token');
-  
+
   if (!sessionToken) {
     return new Response(JSON.stringify({ error: 'Session token required' }), {
       status: 401,
@@ -409,7 +606,6 @@ async function handleR2Upload(request, env, corsHeaders) {
     });
   }
 
-  // Validate session
   const session = await env.DB.prepare(
     'SELECT * FROM upload_sessions WHERE session_token = ? AND file_key = ? AND status = "pending"'
   ).bind(sessionToken, fileKey).first();
@@ -421,8 +617,17 @@ async function handleR2Upload(request, env, corsHeaders) {
     });
   }
 
+  if (session.unique_id.startsWith('_')) {
+    const payload = await requireAuthCookie(request, env);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+  }
+
   try {
-    // Upload directly to R2
     await env.R2_BUCKET.put(fileKey, request.body, {
       httpMetadata: {
         contentType: 'application/octet-stream'
@@ -441,8 +646,9 @@ async function handleR2Upload(request, env, corsHeaders) {
   }
 }
 
-// Helper functions
-async function checkDailyUploadLimit(db, uniqueId, newFileSize, env) {
+// ------------- Quota + cleanup helpers -------------
+
+async function checkDailyUploadLimit(db, id, newFileSize, env) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayTimestamp = today.getTime();
@@ -457,7 +663,7 @@ async function checkDailyUploadLimit(db, uniqueId, newFileSize, env) {
       AND uploaded_at >= ? 
       AND uploaded_at < ?
       AND status = 'completed'
-  `).bind(uniqueId, todayTimestamp, tomorrow).first();
+  `).bind(id, todayTimestamp, tomorrow).first();
 
   const currentUsage = result?.total_size || 0;
   const fileCount = result?.file_count || 0;
@@ -472,37 +678,37 @@ async function checkDailyUploadLimit(db, uniqueId, newFileSize, env) {
     used: currentUsage,
     limit: dailyLimit,
     remaining: dailyLimit - currentUsage,
-    fileCount: fileCount,
-    maxFiles: maxFiles,
-    usagePercentage: Math.round((currentUsage / dailyLimit) * 100)
+    fileCount,
+    maxFiles,
+    usagePercentage: dailyLimit > 0 
+      ? Math.round((currentUsage / dailyLimit) * 100) 
+      : 0
   };
 }
 
 async function cleanupExpiredFiles(env) {
   try {
     const now = Date.now();
-    
-    // Get expired files
+
     const expiredFiles = await env.DB.prepare(
       'SELECT file_key FROM files WHERE expire_at < ?'
     ).bind(now).all();
 
-    // Delete from R2 and database
     for (const file of expiredFiles.results || []) {
       try {
         await env.R2_BUCKET.delete(file.file_key);
-        await env.DB.prepare('DELETE FROM files WHERE file_key = ?').bind(file.file_key).run();
+        await env.DB.prepare(
+          'DELETE FROM files WHERE file_key = ?'
+        ).bind(file.file_key).run();
       } catch (error) {
         console.error('Error deleting file:', error);
       }
     }
 
-    // Cleanup old sessions
     await env.DB.prepare(
       'DELETE FROM upload_sessions WHERE expires_at < ? OR (created_at < ? AND upload_completed = 0)'
     ).bind(now, now - 3600000).run();
 
-    console.log(`Cleanup completed: ${expiredFiles.results?.length || 0} files removed`);
   } catch (error) {
     console.error('Cleanup error:', error);
   }
