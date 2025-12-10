@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>File Share</title>
     <style>
         * {
@@ -86,6 +86,23 @@
             background: #10b981;
         }
 
+        .pill-dot.connecting {
+            background: #f59e0b;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
         .btn-primary {
             border: none;
             border-radius: 999px;
@@ -148,7 +165,38 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            min-height: 7em;
+            animation: fadeIn 0.3s ease-out;
             height: 7em;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-card.new-upload {
+            animation: slideIn 0.4s ease-out;
+            border-color: #f4a259;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .file-top {
@@ -194,6 +242,11 @@
             padding: 1px 6px;
             border-radius: 999px;
             background: #f7efe4;
+        }
+
+        .meta-pill.permanent {
+            background: #e0f2fe;
+            color: #0369a1;
         }
 
         .file-actions {
@@ -277,6 +330,7 @@
             border: 1px solid #e2d9cd;
             color: #43362a;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
         }
 
         .alert.success {
@@ -310,6 +364,7 @@
             border: 1px solid #e2d9cd;
             padding: 16px 16px 14px;
             box-shadow: 0 16px 45px rgba(0, 0, 0, 0.12);
+            margin: 0 16px;
         }
 
         .modal-title {
@@ -362,6 +417,33 @@
             font-size: 12px;
             background: #fffaf3;
             color: #2f2a25;
+        }
+
+        .field-hint {
+            font-size: 10px;
+            color: #8a7e70;
+            margin-top: 4px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #fffbf4;
+            border-radius: 8px;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: auto;
+        }
+
+        .checkbox-field label {
+            margin: 0;
+            font-size: 12px;
+            color: #2f2a25;
+            cursor: pointer;
         }
 
         .modal-actions {
@@ -430,11 +512,124 @@
                 display: none;
             }
         }
+
+                .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(245, 245, 243, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+        }
+
+        .auth-overlay.show {
+            display: flex;
+        }
+
+        .auth-box {
+            background: white;
+            padding: 28px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            max-width: 340px;
+            width: 100%;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-box h2 {
+            font-size: 19px;
+            margin-bottom: 18px;
+            color: #2D2D2D;
+            font-weight: 600;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #D1D1C7;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #10A37F;
+            box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+        }
+
+        .auth-submit {
+            width: 100%;
+            padding: 11px;
+            background: #10A37F;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            touch-action: manipulation;
+        }
+
+        .auth-submit:hover {
+            background: #0D8B6C;
+        }
+
+        .auth-submit:active {
+            transform: scale(0.98);
+        }
+
+        .auth-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .auth-error {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .auth-error.show {
+            display: block;
+        }
     </style>
 </head>
 
 <body>
-    <div class="page">
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-box">
+            <h2>Login Required</h2>
+            <input type="text" class="auth-input" id="username" placeholder="Username" autocomplete="username">
+            <input type="password" class="auth-input" id="password" placeholder="Password" autocomplete="current-password">
+            <button class="auth-submit" id="authSubmit">Login</button>
+            <div class="auth-error" id="authError">Invalid credentials</div>
+        </div>
+    </div>
+    <div class="page" style="display: none;">
         <header class="top-bar">
             <div class="brand">
                 <div class="brand-mark">📁</div>
@@ -465,7 +660,7 @@
     <div class="modal" id="uploadModal">
         <div class="modal-panel">
             <div class="modal-title">Upload file</div>
-            <div class="modal-sub">Max 100MB per file. Files auto-expire after the time you choose.</div>
+            <div class="modal-sub">Max 100MB per file. Choose expiry time or keep forever.</div>
 
             <div class="upload-area" id="uploadArea">
                 <div style="font-size: 28px; margin-bottom: 6px;">☁️</div>
@@ -474,9 +669,15 @@
             </div>
             <input type="file" id="fileInput" class="file-input" />
 
-            <div class="field">
+            <div class="checkbox-field">
+                <input type="checkbox" id="noExpiryCheckbox" />
+                <label for="noExpiryCheckbox">Keep forever (no expiry)</label>
+            </div>
+
+            <div class="field" id="expiryField">
                 <label for="expiryInput">Expiry (minutes)</label>
                 <input type="number" id="expiryInput" value="60" min="5" max="10080" />
+                <div class="field-hint">Files with no expiry don't count toward daily quota</div>
             </div>
 
             <div class="progress-bar" id="progressBar">
@@ -489,310 +690,385 @@
             </div>
         </div>
     </div>
-
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomId = urlParams.get('id');
+            const elements = {
+                filesGrid: document.getElementById('filesGrid'),
+                uploadBtn: document.getElementById('uploadBtn'),
+                uploadModal: document.getElementById('uploadModal'),
+                uploadArea: document.getElementById('uploadArea'),
+                fileInput: document.getElementById('fileInput'),
+                expiryInput: document.getElementById('expiryInput'),
+                expiryField: document.getElementById('expiryField'),
+                noExpiryCheckbox: document.getElementById('noExpiryCheckbox'),
+                submitBtn: document.getElementById('submitBtn'),
+                cancelBtn: document.getElementById('cancelBtn'),
+                progressBar: document.getElementById('progressBar'),
+                progressFill: document.getElementById('progressFill'),
+                roomStatusDot: document.getElementById('roomStatusDot'),
+                roomTypeLabel: document.getElementById('roomTypeLabel'),
+                roomConsumptionId: document.getElementById('roomConsumptionId'),
+                authOverlay: document.getElementById('authOverlay'),
+                authSubmit: document.getElementById('authSubmit'),
+                authError: document.getElementById('authError')
+            };
 
-        const elements = {
-            filesGrid: document.getElementById('filesGrid'),
-            uploadBtn: document.getElementById('uploadBtn'),
-            uploadModal: document.getElementById('uploadModal'),
-            uploadArea: document.getElementById('uploadArea'),
-            fileInput: document.getElementById('fileInput'),
-            expiryInput: document.getElementById('expiryInput'),
-            submitBtn: document.getElementById('submitBtn'),
-            cancelBtn: document.getElementById('cancelBtn'),
-            progressBar: document.getElementById('progressBar'),
-            progressFill: document.getElementById('progressFill'),
-            roomStatusDot: document.getElementById('roomStatusDot'),
-            roomTypeLabel: document.getElementById('roomTypeLabel'),
-            roomConsumptionId: document.getElementById('roomConsumptionId')
-        };
+            let selectedFile = null;
+            let ws = null;
+            let reconnectTimer = null;
+            const RECONNECT_DELAY = 3000; // 3 seconds
 
-        let selectedFile = null;
-
-        function initRoomUI() {
-            const isPersonal = id && id.startsWith('_');
-            elements.roomTypeLabel.textContent = isPersonal ? 'Private room' : 'Public room';
-            elements.roomStatusDot.style.background = isPersonal ? '#2563eb' : '#10b981';
-
-            // If private and not logged in, show small hint (optional)
-            if (isPersonal) {
-                // call auth status to allow UI decisions
-                fetch('/auth/status', { credentials: 'include' })
-                    .then(r => r.json())
-                    .then(j => {
-                        if (!j.loggedIn) {
-                            showAlert('This is a private room. Please login to upload.', 'error');
-                        }
-                    })
-                    .catch(() => { });
-            }
-        }
-
-        initRoomUI();
-        elements.uploadBtn.addEventListener('click', () => {
-            elements.uploadModal.classList.add('show');
-        });
-
-        elements.cancelBtn.addEventListener('click', () => {
-            elements.uploadModal.classList.remove('show');
-            resetUpload();
-        });
-
-        // fileInput -> select
-        elements.uploadArea.addEventListener('click', () => {
-            elements.fileInput.click();
-        });
-
-        elements.fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                setSelectedFile(e.target.files[0]);
-            }
-        });
-
-        // drag & drop
-        elements.uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            elements.uploadArea.classList.add('dragging');
-        });
-
-        elements.uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            elements.uploadArea.classList.remove('dragging');
-        });
-
-        elements.uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            elements.uploadArea.classList.remove('dragging');
-            const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-            if (f) setSelectedFile(f);
-        });
-
-        function setSelectedFile(file) {
-            selectedFile = file;
-            elements.submitBtn.disabled = false;
-            showAlert(`Selected: ${file.name}`, 'success');
-        }
-
-        // Reset upload state
-        function resetUpload() {
-            selectedFile = null;
-            elements.fileInput.value = '';
-            elements.submitBtn.disabled = true;
-            elements.progressBar.style.display = 'none';
-            elements.progressFill.style.width = '0%';
-        }
-
-        // ---------- Upload flow ----------
-        elements.submitBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
-
-            try {
-                elements.submitBtn.disabled = true;
-                elements.progressBar.style.display = 'block';
-                elements.progressFill.style.width = '4%';
-
-                // Step 1: Init upload (include credentials so cookie is sent if private)
-                const initResponse = await fetch('/api/init-upload', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id,
-                        fileName: selectedFile.name,
-                        fileSize: selectedFile.size,
-                        expiryMinutes: parseInt(elements.expiryInput.value, 10),
-                        clientFingerprint: generateFingerprint()
-                    })
-                });
-
-                if (!initResponse.ok) {
-                    const err = await initResponse.json().catch(() => ({ error: 'Init failed' }));
-                    throw new Error(err.error || 'Upload initialization failed');
-                }
-                const initData = await initResponse.json();
-
-                // Step 2: Upload file (PUT to Worker/R2) — send session token header and include credentials
-                const uploadResponse = await fetch(`/api/r2-upload/${initData.fileKey}`, {
-                    method: 'PUT',
-                    credentials: 'include',
-                    headers: { 'X-Session-Token': initData.sessionToken },
-                    body: selectedFile
-                });
-
-                if (!uploadResponse.ok) {
-                    const err = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
-                    throw new Error(err.error || 'File upload failed');
-                }
-
-                elements.progressFill.style.width = '80%';
-
-                // Step 3: Complete upload
-                const completeResponse = await fetch('/api/upload-complete', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Session-Token': initData.sessionToken
-                    },
-                    body: JSON.stringify({ sessionId: initData.sessionId })
-                });
-
-                if (!completeResponse.ok) {
-                    const err = await completeResponse.json().catch(() => ({ error: 'Complete failed' }));
-                    throw new Error(err.error || 'Upload completion failed');
-                }
-
-                elements.progressFill.style.width = '100%';
-                showAlert('File uploaded successfully!', 'success');
-                elements.uploadModal.classList.remove('show');
-                resetUpload();
-                loadFiles();
-            } catch (error) {
-                showAlert(error.message || 'Upload failed', 'error');
-                elements.submitBtn.disabled = false;
-                elements.progressBar.style.display = 'none';
-                elements.progressFill.style.width = '0%';
-            }
-        });
-
-        // ---------- Listing / delete / download ----------
-        async function loadFiles() {
-            try {
-                const res = await fetch(`/api/files?id=${encodeURIComponent(id)}`, { credentials: 'include' });
-                const data = await res.json();
-
-                if (data.quota) {
-                    elements.roomConsumptionId.textContent = `${(data.quota.used / (1024 * 1024)).toFixed(1)}MB / ${(data.quota.limit / (1024 * 1024)).toFixed(1)}MB today`;
-                } else {
-                    elements.roomConsumptionId.textContent = '';
-                }
-
-                if (!data.files || data.files.length === 0) {
-                    elements.filesGrid.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📄</div>
-          <div>No files yet</div>
-          <div style="font-size:11px;margin-top:4px;">Use the Upload button to add files to this room.</div>
-        </div>`;
+            async function init() {
+                const isPrivate = roomId.startsWith('_');
+                let isAuthenticated = await checkAuth(isPrivate);
+                if(isPrivate && !isAuthenticated) {
                     return;
                 }
 
-                elements.filesGrid.innerHTML = data.files.map(file => {
-                    const size = formatFileSize(file.size);
-                    const timeLeft = formatTimeRemaining(file.expire_at);
-                    const icon = getFileIcon(file.original_name);
-                    return `
-        <div class="file-card">
-          <div class="file-top">
-            <div class="file-icon">${icon}</div>
-            <div class="file-main">
-              <div class="file-name" title="${file.original_name}">${file.original_name}</div>
-              <div class="file-meta">
-                <span class="meta-pill">${size}</span>
-                <span>${timeLeft}</span>
-              </div>
-            </div>
-          </div>
-          <div class="file-actions">
-            <button class="action-btn download" onclick="downloadFile('${file.file_key}', '${file.original_name}')">
-              ⬇️ Download
-            </button>
-            <button class="action-btn delete" onclick="deleteFile('${file.file_key}')">
-              🗑 Delete
-            </button>
-          </div>
-        </div>`;
-                }).join('');
-            } catch (e) {
-                showAlert('Failed to load files', 'error');
+                document.querySelector('.page').style.display = 'flex';
+                loadFiles();
+                connectWS();
             }
-        }
 
-        async function downloadFile(fileKey, fileName) {
-            // Use location.href so browser handles download properly
-            window.location.href = `/api/download/${id}/${encodeURIComponent(fileKey)}`;
-            showAlert('Downloading...', 'success');
-        }
+            async function checkAuth(isPrivate) {
+                elements.roomTypeLabel.textContent = isPrivate ? 'Private room' : 'Public room';
+                elements.roomStatusDot.style.background = isPrivate ? '#2563eb' : '#10b981';
+                if (!isPrivate) {
+                    return true;
+                }
 
-        async function deleteFile(fileKey) {
-            if (!confirm('Delete this file?')) return;
-
-            try {
-                const response = await fetch(`/api/files/${id}/${encodeURIComponent(fileKey)}`, {
-                    method: 'DELETE',
+                const res = await fetch('/auth/status', {
+                    method: 'GET',
                     credentials: 'include'
                 });
 
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({ error: 'Delete failed' }));
-                    throw new Error(err.error || 'Delete failed');
+                const data = await res.json();
+
+                if (data.loggedIn) {
+                    return true;
+                } else {
+                    showAuthOverlay();
+                    return false;
+                }
+            }
+
+            function showAuthOverlay() {
+                elements.authOverlay.classList.add('show');
+                document.getElementById('username').focus();
+            }
+
+            function hideAuthOverlay() {
+                elements.authOverlay.classList.remove('show');
+            }
+
+            elements.authSubmit.addEventListener('click', async () => {
+                const _username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!_username || !password) {
+                    elements.authError.classList.add('show');
+                    elements.authError.textContent = 'Please enter required fields';
+                    return;
                 }
 
-                showAlert('File deleted', 'success');
-                loadFiles();
-            } catch (error) {
-                showAlert('Delete failed', 'error');
+                elements.authSubmit.disabled = true;
+                elements.authSubmit.textContent = 'Verifying...';
+                elements.authError.classList.remove('show');
+
+                try {
+                    const response = await fetch(`/auth/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: _username, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        hideAuthOverlay();
+                        document.querySelector('.page').style.display = 'flex';
+                        loadFiles();
+                        connectWS();
+                    } else {
+                        elements.authError.classList.add('show');
+                    }
+                } catch (error) {
+                    console.log('Auth error:', error);
+                    elements.authError.textContent = 'Connection error';
+                    elements.authError.classList.add('show');
+                } finally {
+                    elements.authSubmit.disabled = false;
+                    elements.authSubmit.textContent = 'Login';
+                }
+            });
+
+            document.getElementById('username').addEventListener('change', (e) => {
+                elements.authError.classList.remove('show');
+                elements.authError.textContent = 'Invalid credentials';
+            });
+
+            document.getElementById('password').addEventListener('change', (e) => {
+                elements.authError.classList.remove('show');
+                elements.authError.textContent = 'Invalid credentials';
+            });
+
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.authSubmit.click();
+                }
+            });
+
+
+            function connectWS() {
+                if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+                const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const url = `${proto}//${location.host}/ws/room/${encodeURIComponent(roomId)}`;
+                ws = new WebSocket(url);
+
+                ws.addEventListener('open', () => {
+                    // console.debug('WS open', roomId);
+                    try { ws.send('ping'); } catch (e) { }
+                });
+
+                ws.addEventListener('message', (evt) => {
+                    try {
+                        const data = typeof evt.data === 'string' ? JSON.parse(evt.data) : null;
+                        if (!data) return;
+
+                        if (data.type === 'file_uploaded') {
+                            loadFiles();
+                            if (data.fileName) showAlert(`New file: ${data.fileName}`, 'success');
+                        } else if (data.type === 'file_deleted') {
+                            loadFiles();
+                            showAlert('File deleted', 'success');
+                        }
+                    } catch (err) {
+                        console.error('WS message parse error', err);
+                    }
+                });
+
+                ws.addEventListener('close', () => {
+                    // console.debug('WS closed, scheduling reconnect');
+                    scheduleReconnect();
+                });
+
+                ws.addEventListener('error', (e) => {
+                    console.error('WS error', e);
+                    try { ws.close(); } catch (e) { }
+                });
             }
-        }
 
-        // ---------- utilities (unchanged) ----------
-        function getFileIcon(fileName) {
-            const ext = fileName.split('.').pop()?.toLowerCase() || '';
-            const icons = {
-                jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', svg: '🖼️',
-                mp4: '🎬', avi: '🎬', mov: '🎬', mkv: '🎬',
-                mp3: '🎵', wav: '🎵', ogg: '🎵',
-                zip: '🗜️', rar: '🗜️', '7z': '🗜️',
-                pdf: '📄', doc: '📝', docx: '📝', txt: '📝',
-                xls: '📊', xlsx: '📊',
-                js: '💻', html: '💻', css: '💻',
-                py: '🐍', java: '☕'
+            elements.uploadBtn.addEventListener('click', () => {
+                elements.uploadModal.classList.add('show');
+            });
+
+            elements.cancelBtn.addEventListener('click', closeModal);
+
+            elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+            elements.fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
+            });
+
+            ['dragover', 'dragleave', 'drop'].forEach(ev => {
+                elements.uploadArea.addEventListener(ev, (e) => {
+                    e.preventDefault();
+                    if (ev === 'dragover') elements.uploadArea.classList.add('dragging');
+                    if (ev === 'dragleave' || ev === 'drop') elements.uploadArea.classList.remove('dragging');
+                    if (ev === 'drop') {
+                        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                        if (f) setSelectedFile(f);
+                    }
+                });
+            });
+
+            elements.noExpiryCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    elements.expiryField.style.display = 'none';
+                    elements.expiryInput.value = '0';
+                } else {
+                    elements.expiryField.style.display = 'block';
+                    elements.expiryInput.value = '60';
+                }
+            });
+
+            function setSelectedFile(file) {
+                selectedFile = file;
+                elements.submitBtn.disabled = false;
+                showAlert('Selected: ' + file.name, 'success');
+            }
+
+            function closeModal() {
+                elements.uploadModal.classList.remove('show');
+                resetUpload();
+            }
+
+            function resetUpload() {
+                selectedFile = null;
+                elements.fileInput.value = '';
+                elements.submitBtn.disabled = true;
+                elements.progressBar.style.display = 'none';
+                elements.progressFill.style.width = '0%';
+                elements.noExpiryCheckbox.checked = false;
+                elements.expiryField.style.display = 'block';
+                elements.expiryInput.value = '60';
+            }
+
+            elements.submitBtn.addEventListener('click', async () => {
+                if (!selectedFile) return;
+                elements.submitBtn.disabled = true;
+                elements.progressBar.style.display = 'block';
+                elements.progressFill.style.width = '5%';
+                const expiryMinutes = elements.noExpiryCheckbox.checked ? 0 : parseInt(elements.expiryInput.value || '60', 10);
+
+                try {
+                    const initResp = await fetch('/api/init-upload', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: roomId,
+                            fileName: selectedFile.name,
+                            fileSize: selectedFile.size,
+                            expiryMinutes,
+                            clientFingerprint: generateFingerprint()
+                        })
+                    });
+                    if (!initResp.ok) {
+                        const e = await initResp.json().catch(() => ({ error: 'init failed' }));
+                        throw new Error(e.error || 'Init failed');
+                    }
+                    const init = await initResp.json();
+
+                    const putResp = await fetch('/api/r2-upload/' + encodeURIComponent(init.fileKey), {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'X-Session-Token': init.sessionToken },
+                        body: selectedFile
+                    });
+                    if (!putResp.ok) {
+                        const e = await putResp.json().catch(() => ({ error: 'upload failed' }));
+                        throw new Error(e.error || 'Upload failed');
+                    }
+                    elements.progressFill.style.width = '80%';
+
+                    const completeResp = await fetch('/api/upload-complete', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json', 'X-Session-Token': init.sessionToken },
+                        body: JSON.stringify({ sessionId: init.sessionId })
+                    });
+                    if (!completeResp.ok) {
+                        const e = await completeResp.json().catch(() => ({ error: 'complete failed' }));
+                        throw new Error(e.error || 'Complete failed');
+                    }
+                    elements.progressFill.style.width = '100%';
+                    showAlert('Upload finished', 'success');
+                    closeModal();
+                    // setTimeout(loadFiles, 400);
+                } catch (err) {
+                    showAlert(err.message || 'Upload failed', 'error');
+                    elements.submitBtn.disabled = false;
+                    elements.progressBar.style.display = 'none';
+                    elements.progressFill.style.width = '0%';
+                }
+            });
+
+            async function loadFiles() {
+                try {
+                    const r = await fetch('/api/files?id=' + encodeURIComponent(roomId), { credentials: 'include' });
+                    if (!r.ok) {
+                        const e = await r.json().catch(() => ({ error: 'load failed' }));
+                        throw new Error(e.error || 'Failed to load files');
+                    }
+                    const j = await r.json();
+                    if (j.quota) {
+                        elements.roomConsumptionId.textContent = `${(j.quota.used / 1024 / 1024).toFixed(1)}MB / ${(j.quota.limit / 1024 / 1024).toFixed(1)}MB today`;
+                    }
+                    if (!j.files || j.files.length === 0) {
+                        elements.filesGrid.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div>No files yet</div><div style="font-size:11px;margin-top:4px;">Use Upload to add files</div></div>`;
+                        return;
+                    }
+                    elements.filesGrid.innerHTML = j.files.map(f => {
+                        const size = formatFileSize(f.size);
+                        const isPermanent = f.expiry_minutes === 0;
+                        const timeLeft = isPermanent ? '∞ Permanent' : formatTimeRemaining(f.expire_at);
+                        const icon = getFileIcon(f.original_name);
+                        return `<div class="file-card">
+            <div class="file-top">
+              <div class="file-icon">${icon}</div>
+              <div class="file-main">
+                <div class="file-name" title="${escapeHtml(f.original_name)}">${escapeHtml(f.original_name)}</div>
+                <div class="file-meta">
+                  <span class="meta-pill">${size}</span>
+                  <span class="meta-pill ${isPermanent ? 'permanent' : ''}">${timeLeft}</span>
+                </div>
+              </div>
+            </div>
+            <div class="file-actions">
+              <button class="action-btn download" onclick="downloadFile('${encodeURIComponent(f.file_key)}','${escapeAttr(f.original_name)}')">⬇️ Download</button>
+              <button class="action-btn delete" onclick="deleteFile('${encodeURIComponent(f.file_key)}')">🗑 Delete</button>
+            </div>
+          </div>`;
+                    }).join('');
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Failed to load files', 'error');
+                }
+            }
+
+            window.downloadFile = function (fileKey, fileName) {
+                // decode the encoded key passed by onclick
+                const decodedKey = decodeURIComponent(fileKey);
+                window.location.href = '/api/download/' + encodeURIComponent(roomId) + '/' + encodeURIComponent(decodedKey);
+                showAlert('Downloading...', 'success');
             };
-            return icons[ext] || '📄';
-        }
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+            window.deleteFile = async function (fileKey) {
+                const decodedKey = decodeURIComponent(fileKey);
+                if (!confirm('Delete this file?')) return;
+                try {
+                    const r = await fetch('/api/files/' + encodeURIComponent(roomId) + '/' + encodeURIComponent(decodedKey), { method: 'DELETE', credentials: 'include' });
+                    if (!r.ok) {
+                        const e = await r.json().catch(() => ({ error: 'delete failed' }));
+                        throw new Error(e.error || 'Delete failed');
+                    }
+                    showAlert('Deleted', 'success');
+                    // loadFiles();
+                } catch (err) {
+                    showAlert('Delete failed', 'error');
+                }
+            };
 
-        function formatTimeRemaining(expireAt) {
-            const diff = expireAt - Date.now();
-            if (diff <= 0) return 'Expired';
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-            if (days > 0) return `${days}d ${hours % 24}h`;
-            if (hours > 0) return `${hours}h ${minutes % 60}m`;
-            return `${minutes}m`;
-        }
+            // small helpers
+            function getFileIcon(name) { const ext = (name.split('.').pop() || '').toLowerCase(); const map = { jpg: '🖼️', png: '🖼️', pdf: '📄', mp4: '🎬', mp3: '🎵', zip: '🗜️' }; return map[ext] || '📄'; }
+            function formatFileSize(b) { if (!b) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(b) / Math.log(k)); return (b / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]; }
+            function formatTimeRemaining(expireAt) { const diff = expireAt - Date.now(); if (diff <= 0) return 'Expired'; const m = Math.floor(diff / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24); if (d > 0) return d + 'd ' + (h % 24) + 'h'; if (h > 0) return h + 'h ' + (m % 60) + 'm'; return m + 'm'; }
+            function generateFingerprint() { return btoa(navigator.userAgent + screen.width + screen.height); }
+            function showAlert(msg, type = 'success') { const a = document.createElement('div'); a.className = 'alert ' + (type === 'error' ? 'error' : 'success'); a.textContent = msg; document.body.appendChild(a); setTimeout(() => a.remove(), 3000); }
+            function escapeHtml(s) { return (s + '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+            function escapeAttr(s) { return (s + '').replace(/'/g, "&#39;").replace(/"/g, "&quot;"); }
 
-        function generateFingerprint() {
-            return btoa(navigator.userAgent + screen.width + screen.height);
-        }
+            function scheduleReconnect() {
+                if (reconnectTimer) return;
+                reconnectTimer = setTimeout(() => {
+                    reconnectTimer = null;
+                    connectWS();
+                }, RECONNECT_DELAY);
+            }
 
-        function showAlert(message, type) {
-            const alert = document.createElement('div');
-            alert.className = `alert ${type}`;
-            alert.textContent = message;
-            document.body.appendChild(alert);
-            setTimeout(() => alert.remove(), 3000);
-        }
+            // init
+            init();
 
-        // Expose for HTML buttons
-        window.downloadFile = downloadFile;
-        window.deleteFile = deleteFile;
 
-        // initial load
-        loadFiles();
+            window.addEventListener('beforeunload', () => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    try { ws.close(); } catch (e) { }
+                }
+            });
+        })();
     </script>
-
 </body>
 
 </html>

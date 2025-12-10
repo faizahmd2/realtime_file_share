@@ -6,12 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail",
-    "db:create": "wrangler d1 create file_share",
-    "db:init": "wrangler d1 execute file_share --file=./schema.sql",
-    "db:query": "wrangler d1 execute file_share --command",
-    "db:list-files": "wrangler d1 execute file_share --command 'SELECT COUNT(*) as total, SUM(size) as total_size FROM files'",
-    "db:cleanup": "wrangler d1 execute file_share --command 'DELETE FROM files WHERE expire_at < strftime(\"%s\", \"now\") * 1000'"
+    "db:create": "wrangler d1 create individual_db",
+    "db:init": "wrangler d1 execute individual_db --file=./schema.sql"
   },
   "keywords": [
     "cloudflare",
