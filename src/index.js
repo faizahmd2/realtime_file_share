@@ -331,17 +331,6 @@ async function handleDownload(request, env, corsHeaders) {
 }
 
 async function handleDeleteFile(request, env, corsHeaders) {
-    const sessionToken = request.headers.get('X-Session-Token');
-    if (!sessionToken) return json({ error: 'Session token required' }, 401, corsHeaders);
-
-    const session = await env.DB.prepare('SELECT * FROM upload_sessions WHERE session_token = ?').bind(sessionToken).first();
-    if (!session) return json({ error: 'Invalid session' }, 401, corsHeaders);
-
-    if (session.username !== 'pub') {
-        const payload = await requireAuthCookie(request, env);
-        if (!payload || payload.u !== session.username) return json({ error: 'Unauthorized' }, 401, corsHeaders);
-    }
-
     const pathAfter = new URL(request.url).pathname;
     const [, , , visibleId, ...rest] = pathAfter.split('/');
     const fileKey = decodeURIComponent(rest.join('/'));
@@ -353,7 +342,7 @@ async function handleDeleteFile(request, env, corsHeaders) {
 
     await env.R2_BUCKET.delete(file.file_key);
     await env.DB.prepare('DELETE FROM files WHERE unique_id = ? AND username = ? AND file_key = ?').bind(resolved.rawId, resolved.username, fileKey).run();
-    await env.DB.prepare('UPDATE upload_sessions SET status = "deleted" WHERE session_id = ?').bind(session.session_id).run();
+    await env.DB.prepare('UPDATE upload_sessions SET status = "deleted" WHERE session_id = ?').bind(file.session_id).run();
 
     try {
         const doName = `${resolved.username}:${resolved.rawId}`;
